@@ -54,7 +54,8 @@ enum tN2kZydroDeviceModel {
     tN2kZydroDeviceModel_autonomyCore=2,
     tN2kZydroDeviceModel_devKit=3,
     tN2kZydroDeviceModel_elrsReceiver=4,
-    tN2kZydroDeviceModel_relay=5
+    tN2kZydroDeviceModel_relay=5,
+    tN2kZydroDeviceModel_torqlinkController=6
 };
 
 // Enumeration of health status of a device
@@ -72,6 +73,15 @@ enum tN2kZydroThrottleSetpointMode {
     tN2kZydroThrottleSetpointMode_idle=1,
     tN2kZydroThrottleSetpointMode_throttlePercentage=2,
     tN2kZydroThrottleSetpointMode_rpm=3
+};
+
+// Enumeration of rudder controller setpoint modes
+enum tN2kZydroRudderSetpointMode {
+    tN2kZydroRudderSetpointMode_invalid=0,
+    tN2kZydroRudderSetpointMode_idle=1,
+    tN2kZydroRudderSetpointMode_angleDegrees=2,
+    tN2kZydroRudderSetpointMode_normalized=3,
+    tN2kZydroRudderSetpointMode_openLoop=4
 };
 
 // Enumeration of command types
@@ -153,6 +163,21 @@ bool ParseN2kPGN65282(const tN2kMsg &N2kMsg, unsigned char &ThrottleID, tN2kZydr
  */
 void SetN2kPGN65283(tN2kMsg &N2kMsg, unsigned char JoystickID, bool Connected, float Channel1, float Channel2, float Channel3, float Channel4, float Channel5, float Channel6, float Channel7, float Channel8);
 bool ParseN2kPGN65283(const tN2kMsg &N2kMsg, unsigned char &JoystickID, bool &Connected, float &Channel1, float &Channel2, float &Channel3, float &Channel4, float &Channel5, float &Channel6, float &Channel7, float &Channel8);
+
+/**************************************************************************
+ * \brief PGN 65284: Zydro "Rudder Control Setpoint"
+ *
+ * This message is used to set a target for a rudder / steering controller.
+ *
+ * \param N2kMsg          Reference to a N2kMsg Object,
+ *                        Output: NMEA2000 message ready to be send.
+ * \param RudderID        Integer ID for the rudder channel; typically 0.
+ * \param Mode            Setpoint mode, from a Zydro internal enumeration.
+ * \param Target          Target value. In angleDegrees mode this is degrees;
+ *                        in normalized/openLoop modes this is -1.0 to 1.0.
+ */
+void SetN2kPGN65284(tN2kMsg &N2kMsg, unsigned char RudderID, tN2kZydroRudderSetpointMode Mode, float Target);
+bool ParseN2kPGN65284(const tN2kMsg &N2kMsg, unsigned char &RudderID, tN2kZydroRudderSetpointMode &Mode, float &Target);
 
 /**************************************************************************
  * \brief PGN 65290: Zydro "Generic Command"

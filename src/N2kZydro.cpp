@@ -145,6 +145,28 @@ bool ParseN2kPGN65283(const tN2kMsg &N2kMsg, unsigned char &JoystickID, bool &Co
 };
 
 /**************************************************************************/
+// PGN 65284: Zydro "Rudder Control Setpoint"
+
+void SetN2kPGN65284(tN2kMsg &N2kMsg, unsigned char RudderID, tN2kZydroRudderSetpointMode Mode, float Target) {
+  N2kMsg.SetPGN(65284L);
+  N2kMsg.Priority=3;
+  N2kMsg.Add2ByteUInt(ZydroProprietary);
+  N2kMsg.AddByte((unsigned char)RudderID);
+  N2kMsg.AddByte((unsigned char)Mode);
+  N2kMsg.AddFloat(Target);
+}
+
+bool ParseN2kPGN65284(const tN2kMsg &N2kMsg, unsigned char &RudderID, tN2kZydroRudderSetpointMode &Mode, float &Target) {
+  if (N2kMsg.PGN!=65284L) return false;
+  int Index=0;
+  if (N2kMsg.Get2ByteUInt(Index)!=ZydroProprietary) return false;
+  RudderID=N2kMsg.GetByte(Index);
+  Mode=(tN2kZydroRudderSetpointMode)(N2kMsg.GetByte(Index));
+  Target=N2kMsg.GetFloat(Index);
+  return true;
+}
+
+/**************************************************************************/
 // PGN 65290: Zydro "Generic Command"
 
 void SetN2kPGN65290(tN2kMsg &N2kMsg, unsigned char TargetID, tN2kZydroCommand Command, uint64_t Param1, uint64_t Param2, uint64_t Param3, uint64_t Param4) {
