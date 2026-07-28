@@ -212,25 +212,24 @@ bool ParseN2kPGN65284(const tN2kMsg &N2kMsg, unsigned char &SteeringID, tN2kZydr
 /**************************************************************************/
 // PGN 65285: Zydro "Steering Control Status"
 
-void SetN2kPGN65285(tN2kMsg &N2kMsg, unsigned char SteeringID, tN2kZydroSteeringSetpointMode Mode, float TargetValue, float CurrentValue) {
+void SetN2kPGN65285(tN2kMsg &N2kMsg, unsigned char SteeringID, tN2kZydroSteeringSetpointMode Mode, unsigned char TargetValue, unsigned char CurrentValue) {
   N2kMsg.SetPGN(65285L);
   N2kMsg.Priority=5;
-  N2kMsg.SetIsTPMessage(true);
   N2kMsg.Add2ByteUInt(ZydroProprietary);
   N2kMsg.AddByte((unsigned char)SteeringID);
   N2kMsg.AddByte((unsigned char)Mode);
-  N2kMsg.AddFloat(TargetValue);
-  N2kMsg.AddFloat(CurrentValue);
+  N2kMsg.AddByte(TargetValue);
+  N2kMsg.AddByte(CurrentValue);
 }
 
-bool ParseN2kPGN65285(const tN2kMsg &N2kMsg, unsigned char &SteeringID, tN2kZydroSteeringSetpointMode &Mode, float &TargetValue, float &CurrentValue) {
+bool ParseN2kPGN65285(const tN2kMsg &N2kMsg, unsigned char &SteeringID, tN2kZydroSteeringSetpointMode &Mode, unsigned char &TargetValue, unsigned char &CurrentValue) {
   if (N2kMsg.PGN!=65285L) return false;
   int Index=0;
   if (N2kMsg.Get2ByteUInt(Index)!=ZydroProprietary) return false;
   SteeringID=N2kMsg.GetByte(Index);
   Mode=(tN2kZydroSteeringSetpointMode)(N2kMsg.GetByte(Index));
-  TargetValue=N2kMsg.GetFloat(Index);
-  CurrentValue=N2kMsg.GetFloat(Index);
+  TargetValue=N2kMsg.GetByte(Index);
+  CurrentValue=N2kMsg.GetByte(Index);
   return true;
 }
 
