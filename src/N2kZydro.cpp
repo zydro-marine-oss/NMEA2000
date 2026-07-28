@@ -52,23 +52,23 @@ bool ParseN2kPGN65280(const tN2kMsg &N2kMsg, unsigned char &SID, tN2kZydroDevice
 /**************************************************************************/
 // PGN 65281: Zydro "Throttle Control Setpoint"
 
-void SetN2kPGN65281(tN2kMsg &N2kMsg, unsigned char ThrottleID, tN2kZydroThrottleSetpointMode Mode, float Target, bool ShiftGears) {
+void SetN2kPGN65281(tN2kMsg &N2kMsg, unsigned char ThrottleID, tN2kZydroThrottleSetpointMode Mode, unsigned char Target, bool ShiftGears) {
     N2kMsg.SetPGN(65281L);
     N2kMsg.Priority=5;
     N2kMsg.Add2ByteUInt(ZydroProprietary);
     N2kMsg.AddByte((unsigned char)ThrottleID);
     N2kMsg.AddByte((unsigned char)Mode);
-    N2kMsg.AddFloat(Target);
+    N2kMsg.AddByte(Target);
     N2kMsg.AddByte((unsigned char)ShiftGears);
 }
 
-bool ParseN2kPGN65281(const tN2kMsg &N2kMsg, unsigned char &ThrottleID, tN2kZydroThrottleSetpointMode &Mode, float &Target, bool &ShiftGears) {
+bool ParseN2kPGN65281(const tN2kMsg &N2kMsg, unsigned char &ThrottleID, tN2kZydroThrottleSetpointMode &Mode, unsigned char &Target, bool &ShiftGears) {
   if (N2kMsg.PGN!=65281L) return false;
   int Index=0;
   if (N2kMsg.Get2ByteUInt(Index)!=ZydroProprietary) return false;
   ThrottleID=N2kMsg.GetByte(Index);
   Mode=(tN2kZydroThrottleSetpointMode)(N2kMsg.GetByte(Index));
-  Target=N2kMsg.GetFloat(Index);
+  Target=N2kMsg.GetByte(Index);
   ShiftGears=(bool)(N2kMsg.GetByte(Index));
   return true;
 }
@@ -76,26 +76,25 @@ bool ParseN2kPGN65281(const tN2kMsg &N2kMsg, unsigned char &ThrottleID, tN2kZydr
 /**************************************************************************/
 // PGN 65282: Zydro "Throttle Control Status"
 
-void SetN2kPGN65282(tN2kMsg &N2kMsg, unsigned char ThrottleID, tN2kZydroThrottleSetpointMode Mode, float TargetValue, float CurrentValue, unsigned char CurrentGear) {
+void SetN2kPGN65282(tN2kMsg &N2kMsg, unsigned char ThrottleID, tN2kZydroThrottleSetpointMode Mode, unsigned char TargetValue, unsigned char CurrentValue, unsigned char CurrentGear) {
   N2kMsg.SetPGN(65282L);
   N2kMsg.Priority=5;
-  N2kMsg.SetIsTPMessage(true);
   N2kMsg.Add2ByteUInt(ZydroProprietary);
   N2kMsg.AddByte((unsigned char)ThrottleID);
   N2kMsg.AddByte((unsigned char)Mode);
-  N2kMsg.AddFloat(TargetValue);
-  N2kMsg.AddFloat(CurrentValue);
+  N2kMsg.AddByte(TargetValue);
+  N2kMsg.AddByte(CurrentValue);
   N2kMsg.AddByte(CurrentGear);
 }
 
-bool ParseN2kPGN65282(const tN2kMsg &N2kMsg, unsigned char &ThrottleID, tN2kZydroThrottleSetpointMode &Mode, float &TargetValue, float &CurrentValue, unsigned char &CurrentGear) {
+bool ParseN2kPGN65282(const tN2kMsg &N2kMsg, unsigned char &ThrottleID, tN2kZydroThrottleSetpointMode &Mode, unsigned char &TargetValue, unsigned char &CurrentValue, unsigned char &CurrentGear) {
   if (N2kMsg.PGN!=65282L) return false;
   int Index=0;
   if (N2kMsg.Get2ByteUInt(Index)!=ZydroProprietary) return false;
   ThrottleID=N2kMsg.GetByte(Index);
   Mode=(tN2kZydroThrottleSetpointMode)(N2kMsg.GetByte(Index));
-  TargetValue=N2kMsg.GetFloat(Index);
-  CurrentValue=N2kMsg.GetFloat(Index);
+  TargetValue=N2kMsg.GetByte(Index);
+  CurrentValue=N2kMsg.GetByte(Index);
   CurrentGear=N2kMsg.GetByte(Index);
   return true;
 }
@@ -103,66 +102,135 @@ bool ParseN2kPGN65282(const tN2kMsg &N2kMsg, unsigned char &ThrottleID, tN2kZydr
 /**************************************************************************/
 // PGN 65283: Zydro "Remote Control Input"
 
-void SetN2kPGN65283(tN2kMsg &N2kMsg, unsigned char JoystickID, bool Connected, float Channel1, float Channel2, float Channel3, float Channel4, float Channel5, float Channel6, float Channel7, float Channel8) {
+void SetN2kPGN65283(tN2kMsg &N2kMsg, unsigned char JoystickID, bool Connected,
+                    unsigned char Channel1, unsigned char Channel2,
+                    unsigned char Channel3, unsigned char Channel4,
+                    uint16_t Buttons) {
   N2kMsg.SetPGN(65283L);
   N2kMsg.Priority=5;
-  // N2kMsg.SetIsTPMessage(true);
+  N2kMsg.SetIsTPMessage(true);
   N2kMsg.Add2ByteUInt(ZydroProprietary);
   N2kMsg.AddByte((unsigned char)JoystickID);
   N2kMsg.AddByte((unsigned char)Connected);
-  N2kMsg.AddByte(128 + (int)(127 * Channel1));
-  N2kMsg.AddByte(128 + (int)(127 * Channel2));
-  Channel3 = 0.0f;
-  Channel4 = 0.0f;
-  Channel5 = 0.0f;
-  Channel6 = 0.0f;
-  Channel7 = 0.0f;
-  Channel8 = 0.0f;
-  // N2kMsg.AddFloat(Channel2);
-  // N2kMsg.AddFloat(Channel3);
-  // N2kMsg.AddFloat(Channel4);
-  // N2kMsg.AddFloat(Channel5);
-  // N2kMsg.AddFloat(Channel6);
-  // N2kMsg.AddFloat(Channel7);
-  // N2kMsg.AddFloat(Channel8);
-};
+  N2kMsg.AddByte(Channel1);
+  N2kMsg.AddByte(Channel2);
+  N2kMsg.AddByte(Channel3);
+  N2kMsg.AddByte(Channel4);
+  N2kMsg.Add2ByteUInt(Buttons);
+}
 
-bool ParseN2kPGN65283(const tN2kMsg &N2kMsg, unsigned char &JoystickID, bool &Connected, float &Channel1, float &Channel2, float &Channel3, float &Channel4, float &Channel5, float &Channel6, float &Channel7, float &Channel8) {
+void SetN2kPGN65283(tN2kMsg &N2kMsg, unsigned char JoystickID, bool Connected,
+                    unsigned char Channel1, unsigned char Channel2,
+                    unsigned char Channel3, unsigned char Channel4) {
+  // Fits a single CAN frame: proprietary(2)+id(1)+connected(1)+axes(4).
+  N2kMsg.SetPGN(65283L);
+  N2kMsg.Priority=5;
+  N2kMsg.Add2ByteUInt(ZydroProprietary);
+  N2kMsg.AddByte((unsigned char)JoystickID);
+  N2kMsg.AddByte((unsigned char)Connected);
+  N2kMsg.AddByte(Channel1);
+  N2kMsg.AddByte(Channel2);
+  N2kMsg.AddByte(Channel3);
+  N2kMsg.AddByte(Channel4);
+}
+
+bool ParseN2kPGN65283(const tN2kMsg &N2kMsg, unsigned char &JoystickID, bool &Connected,
+                      unsigned char &Channel1, unsigned char &Channel2,
+                      unsigned char &Channel3, unsigned char &Channel4,
+                      uint16_t &Buttons) {
   if (N2kMsg.PGN!=65283L) return false;
   int Index=0;
   if (N2kMsg.Get2ByteUInt(Index)!=ZydroProprietary) return false;
   JoystickID=N2kMsg.GetByte(Index);
   Connected=(bool)(N2kMsg.GetByte(Index));
-  Channel1=(N2kMsg.GetByte(Index) - 128) / 128.0f;
-  Channel2=(N2kMsg.GetByte(Index) - 128) / 128.0f;
-  // Channel3=N2kMsg.GetFloat(Index);
-  // Channel4=N2kMsg.GetFloat(Index);
-  // Channel5=N2kMsg.GetFloat(Index);
-  // Channel6=N2kMsg.GetFloat(Index);
-  // Channel7=N2kMsg.GetFloat(Index);
-  // Channel8=N2kMsg.GetFloat(Index);
+  Channel1=N2kMsg.GetByte(Index);
+  Channel2=N2kMsg.GetByte(Index);
+  Channel3=N2kMsg.GetByte(Index);
+  Channel4=N2kMsg.GetByte(Index);
+  // Joystick-only frames omit the button bitmask.
+  if (Index + 2 <= N2kMsg.DataLen) {
+    Buttons=N2kMsg.Get2ByteUInt(Index);
+  } else {
+    Buttons=0;
+  }
   return true;
-};
+}
+
+bool ParseN2kPGN65283(const tN2kMsg &N2kMsg, unsigned char &JoystickID, bool &Connected,
+                      unsigned char &Channel1, unsigned char &Channel2,
+                      unsigned char &Channel3, unsigned char &Channel4) {
+  uint16_t Buttons=0;
+  return ParseN2kPGN65283(N2kMsg, JoystickID, Connected, Channel1, Channel2, Channel3, Channel4, Buttons);
+}
+
+uint16_t EncodeButtonBitmask(bool Button1, bool Button2, bool Button3, bool Button4,
+                             bool Button5, bool Button6, bool Button7, bool Button8,
+                             bool Button9, bool Button10, bool Button11, bool Button12,
+                             bool Button13, bool Button14, bool Button15, bool Button16) {
+  uint16_t mask = 0;
+  if (Button1)  mask |= (uint16_t)(1u << 0);
+  if (Button2)  mask |= (uint16_t)(1u << 1);
+  if (Button3)  mask |= (uint16_t)(1u << 2);
+  if (Button4)  mask |= (uint16_t)(1u << 3);
+  if (Button5)  mask |= (uint16_t)(1u << 4);
+  if (Button6)  mask |= (uint16_t)(1u << 5);
+  if (Button7)  mask |= (uint16_t)(1u << 6);
+  if (Button8)  mask |= (uint16_t)(1u << 7);
+  if (Button9)  mask |= (uint16_t)(1u << 8);
+  if (Button10) mask |= (uint16_t)(1u << 9);
+  if (Button11) mask |= (uint16_t)(1u << 10);
+  if (Button12) mask |= (uint16_t)(1u << 11);
+  if (Button13) mask |= (uint16_t)(1u << 12);
+  if (Button14) mask |= (uint16_t)(1u << 13);
+  if (Button15) mask |= (uint16_t)(1u << 14);
+  if (Button16) mask |= (uint16_t)(1u << 15);
+  return mask;
+}
 
 /**************************************************************************/
-// PGN 65284: Zydro "Rudder Control Setpoint"
+// PGN 65284: Zydro "Steering Control Setpoint"
 
-void SetN2kPGN65284(tN2kMsg &N2kMsg, unsigned char RudderID, tN2kZydroRudderSetpointMode Mode, float Target) {
+void SetN2kPGN65284(tN2kMsg &N2kMsg, unsigned char SteeringID, tN2kZydroSteeringSetpointMode Mode, unsigned char Target) {
   N2kMsg.SetPGN(65284L);
   N2kMsg.Priority=3;
   N2kMsg.Add2ByteUInt(ZydroProprietary);
-  N2kMsg.AddByte((unsigned char)RudderID);
+  N2kMsg.AddByte((unsigned char)SteeringID);
   N2kMsg.AddByte((unsigned char)Mode);
-  N2kMsg.AddFloat(Target);
+  N2kMsg.AddByte(Target);
 }
 
-bool ParseN2kPGN65284(const tN2kMsg &N2kMsg, unsigned char &RudderID, tN2kZydroRudderSetpointMode &Mode, float &Target) {
+bool ParseN2kPGN65284(const tN2kMsg &N2kMsg, unsigned char &SteeringID, tN2kZydroSteeringSetpointMode &Mode, unsigned char &Target) {
   if (N2kMsg.PGN!=65284L) return false;
   int Index=0;
   if (N2kMsg.Get2ByteUInt(Index)!=ZydroProprietary) return false;
-  RudderID=N2kMsg.GetByte(Index);
-  Mode=(tN2kZydroRudderSetpointMode)(N2kMsg.GetByte(Index));
-  Target=N2kMsg.GetFloat(Index);
+  SteeringID=N2kMsg.GetByte(Index);
+  Mode=(tN2kZydroSteeringSetpointMode)(N2kMsg.GetByte(Index));
+  Target=N2kMsg.GetByte(Index);
+  return true;
+}
+
+/**************************************************************************/
+// PGN 65285: Zydro "Steering Control Status"
+
+void SetN2kPGN65285(tN2kMsg &N2kMsg, unsigned char SteeringID, tN2kZydroSteeringSetpointMode Mode, float TargetValue, float CurrentValue) {
+  N2kMsg.SetPGN(65285L);
+  N2kMsg.Priority=5;
+  N2kMsg.SetIsTPMessage(true);
+  N2kMsg.Add2ByteUInt(ZydroProprietary);
+  N2kMsg.AddByte((unsigned char)SteeringID);
+  N2kMsg.AddByte((unsigned char)Mode);
+  N2kMsg.AddFloat(TargetValue);
+  N2kMsg.AddFloat(CurrentValue);
+}
+
+bool ParseN2kPGN65285(const tN2kMsg &N2kMsg, unsigned char &SteeringID, tN2kZydroSteeringSetpointMode &Mode, float &TargetValue, float &CurrentValue) {
+  if (N2kMsg.PGN!=65285L) return false;
+  int Index=0;
+  if (N2kMsg.Get2ByteUInt(Index)!=ZydroProprietary) return false;
+  SteeringID=N2kMsg.GetByte(Index);
+  Mode=(tN2kZydroSteeringSetpointMode)(N2kMsg.GetByte(Index));
+  TargetValue=N2kMsg.GetFloat(Index);
+  CurrentValue=N2kMsg.GetFloat(Index);
   return true;
 }
 

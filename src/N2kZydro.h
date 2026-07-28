@@ -55,7 +55,8 @@ enum tN2kZydroDeviceModel {
     tN2kZydroDeviceModel_devKit=3,
     tN2kZydroDeviceModel_elrsReceiver=4,
     tN2kZydroDeviceModel_relay=5,
-    tN2kZydroDeviceModel_torqlinkController=6
+    tN2kZydroDeviceModel_torqlinkController=6,
+    tN2kZydroDeviceModel_steeringController=7
 };
 
 // Enumeration of health status of a device
@@ -75,13 +76,12 @@ enum tN2kZydroThrottleSetpointMode {
     tN2kZydroThrottleSetpointMode_rpm=3
 };
 
-// Enumeration of rudder controller setpoint modes
-enum tN2kZydroRudderSetpointMode {
-    tN2kZydroRudderSetpointMode_invalid=0,
-    tN2kZydroRudderSetpointMode_idle=1,
-    tN2kZydroRudderSetpointMode_angleDegrees=2,
-    tN2kZydroRudderSetpointMode_normalized=3,
-    tN2kZydroRudderSetpointMode_openLoop=4
+// Enumeration of steering controller setpoint modes
+enum tN2kZydroSteeringSetpointMode {
+    tN2kZydroSteeringSetpointMode_invalid=0,
+    tN2kZydroSteeringSetpointMode_idle=1,
+    tN2kZydroSteeringSetpointMode_position=2,
+    tN2kZydroSteeringSetpointMode_velocity=3
 };
 
 // Enumeration of command types
@@ -121,11 +121,11 @@ bool ParseN2kPGN65280(const tN2kMsg &N2kMsg, unsigned char &SID, tN2kZydroDevice
  *                        Output: NMEA2000 message ready to be send.
  * \param ThrottleID      Integer ID for the throttle channel; typically 0 (all engines), 1 (port) or 2 (starboard).
  * \param Mode            Setpoint mode, from a Zydro internal enumeration.
- * \param Target          Target throttle value, as double. In throttle percentage mode, this is -1.0 to 1.0, in RPM mode this is an RPM.
+ * \param Target          Target throttle value (0 - 255, 128 = center)
  * \param ShiftGears      Boolean, whether to also shift engine gear in tandem with throttle if available.
  */
-void SetN2kPGN65281(tN2kMsg &N2kMsg, unsigned char ThrottleID, tN2kZydroThrottleSetpointMode Mode, float Target, bool ShiftGears);
-bool ParseN2kPGN65281(const tN2kMsg &N2kMsg, unsigned char &ThrottleID, tN2kZydroThrottleSetpointMode &Mode, float &Target, bool &ShiftGears);
+void SetN2kPGN65281(tN2kMsg &N2kMsg, unsigned char ThrottleID, tN2kZydroThrottleSetpointMode Mode, unsigned char Target, bool ShiftGears);
+bool ParseN2kPGN65281(const tN2kMsg &N2kMsg, unsigned char &ThrottleID, tN2kZydroThrottleSetpointMode &Mode, unsigned char &Target, bool &ShiftGears);
 
 /**************************************************************************
  * \brief PGN 65282: Zydro "Throttle Control Status"
@@ -136,48 +136,80 @@ bool ParseN2kPGN65281(const tN2kMsg &N2kMsg, unsigned char &ThrottleID, tN2kZydr
  *                        Output: NMEA2000 message ready to be send.
  * \param ThrottleID      Integer ID for the throttle channel; typically 0 (all engines), 1 (port) or 2 (starboard).
  * \param Mode            Active setpoint mode, from a Zydro internal enumeration.
- * \param TargetValue     Target setpoint value.
- * \param CurrentValue    Current control value.
+ * \param TargetValue     Target control value (0 - 255, 128 = center)
+ * \param CurrentValue    Current control value (0 - 255, 128 = center)
  * \param CurrentGear     Current gear value (0 = disengaged, 1 = forward, 2 = reverse)
  */
-void SetN2kPGN65282(tN2kMsg &N2kMsg, unsigned char ThrottleID, tN2kZydroThrottleSetpointMode Mode, float TargetValue, float CurrentValue, unsigned char CurrentGear);
-bool ParseN2kPGN65282(const tN2kMsg &N2kMsg, unsigned char &ThrottleID, tN2kZydroThrottleSetpointMode &Mode, float &TargetValue, float &CurrentValue, unsigned char &CurrentGear);
+void SetN2kPGN65282(tN2kMsg &N2kMsg, unsigned char ThrottleID, tN2kZydroThrottleSetpointMode Mode, unsigned char TargetValue, unsigned char CurrentValue, unsigned char CurrentGear);
+bool ParseN2kPGN65282(const tN2kMsg &N2kMsg, unsigned char &ThrottleID, tN2kZydroThrottleSetpointMode &Mode, unsigned char &TargetValue, unsigned char &CurrentValue, unsigned char &CurrentGear);
 
 /**************************************************************************
  * \brief PGN 65283: Zydro "Remote Control Input"
- * 
- * This message encodes raw joystick inputs from a controller.
- * 
- * \param N2kMsg          Reference to a N2kMsg Object, 
- *                        Output: NMEA2000 message ready to be send.
- * \param JoystickID      Integer ID for the joystick; typically 0.
- * \param Connected       Boolean representing if the joystick is currently connected.
- * \param Channel1        RC Channel 1 value (-1.0 to 1.0)
- * \param Channel2        RC Channel 2 value (-1.0 to 1.0)
- * \param Channel3        RC Channel 3 value (-1.0 to 1.0)
- * \param Channel4        RC Channel 4 value (-1.0 to 1.0)
- * \param Channel5        RC Channel 5 value (-1.0 to 1.0)
- * \param Channel6        RC Channel 6 value (-1.0 to 1.0)
- * \param Channel7        RC Channel 7 value (-1.0 to 1.0)
- * \param Channel8        RC Channel 8 value (-1.0 to 1.0)
- */
-void SetN2kPGN65283(tN2kMsg &N2kMsg, unsigned char JoystickID, bool Connected, float Channel1, float Channel2, float Channel3, float Channel4, float Channel5, float Channel6, float Channel7, float Channel8);
-bool ParseN2kPGN65283(const tN2kMsg &N2kMsg, unsigned char &JoystickID, bool &Connected, float &Channel1, float &Channel2, float &Channel3, float &Channel4, float &Channel5, float &Channel6, float &Channel7, float &Channel8);
-
-/**************************************************************************
- * \brief PGN 65284: Zydro "Rudder Control Setpoint"
  *
- * This message is used to set a target for a rudder / steering controller.
+ * This message encodes joystick axes and buttons from a controller.
  *
  * \param N2kMsg          Reference to a N2kMsg Object,
  *                        Output: NMEA2000 message ready to be send.
- * \param RudderID        Integer ID for the rudder channel; typically 0.
- * \param Mode            Setpoint mode, from a Zydro internal enumeration.
- * \param Target          Target value. In angleDegrees mode this is degrees;
- *                        in normalized/openLoop modes this is -1.0 to 1.0.
+ * \param JoystickID      Integer ID for the joystick; typically 0.
+ * \param Connected       Boolean representing if the joystick is currently connected.
+ * \param Channel1        RC Channel 1 value (0 - 255, 128 = center)
+ * \param Channel2        RC Channel 2 value (0 - 255, 128 = center)
+ * \param Channel3        RC Channel 3 value (0 - 255, 128 = center)
+ * \param Channel4        RC Channel 4 value (0 - 255, 128 = center)
+ * \param Buttons         Bitmask of 16 digital button channels (bit 0 = button 1).
  */
-void SetN2kPGN65284(tN2kMsg &N2kMsg, unsigned char RudderID, tN2kZydroRudderSetpointMode Mode, float Target);
-bool ParseN2kPGN65284(const tN2kMsg &N2kMsg, unsigned char &RudderID, tN2kZydroRudderSetpointMode &Mode, float &Target);
+void SetN2kPGN65283(tN2kMsg &N2kMsg, unsigned char JoystickID, bool Connected,
+                    unsigned char Channel1, unsigned char Channel2,
+                    unsigned char Channel3, unsigned char Channel4);
+void SetN2kPGN65283(tN2kMsg &N2kMsg, unsigned char JoystickID, bool Connected,
+                    unsigned char Channel1, unsigned char Channel2,
+                    unsigned char Channel3, unsigned char Channel4,
+                    uint16_t Buttons);
+bool ParseN2kPGN65283(const tN2kMsg &N2kMsg, unsigned char &JoystickID, bool &Connected,
+                      unsigned char &Channel1, unsigned char &Channel2,
+                      unsigned char &Channel3, unsigned char &Channel4);
+bool ParseN2kPGN65283(const tN2kMsg &N2kMsg, unsigned char &JoystickID, bool &Connected,
+                      unsigned char &Channel1, unsigned char &Channel2,
+                      unsigned char &Channel3, unsigned char &Channel4,
+                      uint16_t &Buttons);
+
+/**
+ * \brief Pack 16 digital button states into the PGN 65283 button bitmask.
+ * Bit 0 is Button1, bit 15 is Button16.
+ */
+uint16_t EncodeButtonBitmask(bool Button1, bool Button2, bool Button3, bool Button4,
+                             bool Button5, bool Button6, bool Button7, bool Button8,
+                             bool Button9, bool Button10, bool Button11, bool Button12,
+                             bool Button13, bool Button14, bool Button15, bool Button16);
+
+/**************************************************************************
+ * \brief PGN 65284: Zydro "Steering Control Setpoint"
+ *
+ * This message is used to set a target for a steering controller.
+ *
+ * \param N2kMsg          Reference to a N2kMsg Object,
+ *                        Output: NMEA2000 message ready to be send.
+ * \param SteeringID      Integer ID for the steering channel; typically 0.
+ * \param Mode            Setpoint mode (Position or Velocity)
+ * \param Target          Target position or velocity (0 = full negative, 255 = full positive)
+ */
+void SetN2kPGN65284(tN2kMsg &N2kMsg, unsigned char SteeringID, tN2kZydroSteeringSetpointMode Mode, unsigned char Target);
+bool ParseN2kPGN65284(const tN2kMsg &N2kMsg, unsigned char &SteeringID, tN2kZydroSteeringSetpointMode &Mode, unsigned char &Target);
+
+/**************************************************************************
+ * \brief PGN 65285: Zydro "Steering Control Status"
+ *
+ * This message is used to broadcast the status of a steering controller.
+ *
+ * \param N2kMsg          Reference to a N2kMsg Object,
+ *                        Output: NMEA2000 message ready to be send.
+ * \param SteeringID      Integer ID for the steering channel; typically 0.
+ * \param Mode            Active setpoint mode.
+ * \param TargetValue     Target position or velocity (0 = full negative, 255 = full positive)
+ * \param CurrentValue    Current position or velocity (0 = full negative, 255 = full positive)
+ */
+void SetN2kPGN65285(tN2kMsg &N2kMsg, unsigned char SteeringID, tN2kZydroSteeringSetpointMode Mode, unsigned char TargetValue, unsigned char CurrentValue);
+bool ParseN2kPGN65285(const tN2kMsg &N2kMsg, unsigned char &SteeringID, tN2kZydroSteeringSetpointMode &Mode, unsigned char &TargetValue, unsigned char &CurrentValue);
 
 /**************************************************************************
  * \brief PGN 65290: Zydro "Generic Command"
